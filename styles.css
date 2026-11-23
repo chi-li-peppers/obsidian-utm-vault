@@ -1,0 +1,81 @@
+.utm-vault-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-bottom: var(--size-4-3);
+}
+.utm-vault-preset-btn {
+  font-size: var(--font-ui-smaller);
+  padding: 2px 10px;
+}
+.utm-vault-preset-btn.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+.utm-vault-preview {
+  margin: var(--size-4-3) 0;
+  padding: var(--size-4-2) var(--size-4-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary-alt);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  word-break: break-all;
+  user-select: text;
+}
+.utm-vault-preview.is-empty {
+  color: var(--text-faint);
+  font-family: var(--font-interface);
+}
+.utm-vault-messages {
+  margin-bottom: var(--size-4-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.utm-vault-msg-error {
+  color: var(--text-error);
+  font-size: var(--font-ui-smaller);
+}
+.utm-vault-msg-warn {
+  color: var(--text-warning);
+  font-size: var(--font-ui-smaller);
+}
+.utm-vault-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--size-4-2);
+  margin-top: var(--size-4-3);
+}
+.utm-vault-audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  max-height: 55vh;
+  overflow-y: auto;
+  margin: var(--size-4-3) 0;
+}
+.utm-vault-audit-item {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: var(--size-4-2) var(--size-4-3);
+  background: var(--background-primary-alt);
+}
+.utm-vault-audit-url {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  word-break: break-all;
+  margin-bottom: 4px;
+}
+.utm-vault-intro {
+  margin-bottom: var(--size-4-4);
+  padding: var(--size-4-2) var(--size-4-3);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+.utm-vault-preset-row {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+}
