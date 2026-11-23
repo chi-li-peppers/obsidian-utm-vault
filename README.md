@@ -9,6 +9,8 @@
 
 Build, normalise, validate and organise UTM tracking links right inside Obsidian — no messy spreadsheets required.
 
+![Build clean UTM links inside Obsidian](docs/shot-1.png)
+
 ## Features
 
 - **Channel presets**: one-click presets for Google Ads, Meta Ads, YouTube, LinkedIn, Newsletter, X, Reddit and Affiliate (fully editable in settings)
@@ -19,6 +21,10 @@ Build, normalise, validate and organise UTM tracking links right inside Obsidian
 - **Note UTM audit**: scan any campaign brief or note for broken, inconsistent or duplicate UTM links
 - **Clipboard parser**: parse and edit any existing UTM URL straight from your clipboard
 - **Works on mobile** & zero external dependencies
+
+## Audit & Registry
+
+![Audit UTM links and manage your Markdown registry](docs/shot-2.png)
 
 ## Commands
 
