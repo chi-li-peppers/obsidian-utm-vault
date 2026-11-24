@@ -110,6 +110,25 @@ async function main() {
   const baseFile = I.buildBaseFileContent("UTM Links");
   assert.ok(baseFile.includes('file.inFolder("UTM Links")'));
   assert.ok(baseFile.includes("utm_campaign"));
+
+  // Duplicate detection also scans Bases notes folder frontmatter
+  const plug = new P();
+  plug.settings = { registryPath: "UTM Registry.md", createNotePerLink: true, notesFolder: "UTM Links" };
+  plug.app = {
+    vault: {
+      getAbstractFileByPath: () => null,
+      getMarkdownFiles: () => [{ path: "UTM Links/link-1.md" }, { path: "Other/note.md" }],
+    },
+    metadataCache: {
+      getFileCache: (f) =>
+        f.path === "UTM Links/link-1.md"
+          ? { frontmatter: { utm_url: b1.url } }
+          : { frontmatter: { utm_url: "https://ignored.example.com" } },
+    },
+  };
+  const found = await plug.getExistingUrls();
+  assert.ok(found.has(b1.url), "must detect existing utm_url from notesFolder frontmatter");
+  assert.ok(!found.has("https://ignored.example.com"), "must ignore notes outside notesFolder");
   console.log("registry & bases ok");
 
   console.log("all tests passed");

@@ -415,8 +415,28 @@ class UtmVaultPlugin extends Plugin {
     }
   }
 
+  onunload() {
+    if (this._saveTimer) {
+      window.clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      this.saveData(this.settings);
+    }
+  }
+
   async saveSettings() {
+    if (this._saveTimer) {
+      window.clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+    }
     await this.saveData(this.settings);
+  }
+
+  scheduleSaveSettings(delayMs = 500) {
+    if (this._saveTimer) window.clearTimeout(this._saveTimer);
+    this._saveTimer = window.setTimeout(() => {
+      this._saveTimer = null;
+      this.saveSettings();
+    }, delayMs);
   }
 
   async getExistingUrls() {
@@ -426,6 +446,17 @@ class UtmVaultPlugin extends Plugin {
     if (regFile instanceof TFile) {
       const content = await this.app.vault.read(regFile);
       for (const u of extractUrlsFromRegistry(content)) urls.add(u);
+    }
+    if (this.settings.createNotePerLink && this.app.vault.getMarkdownFiles && this.app.metadataCache) {
+      const folder = normalizePath((this.settings.notesFolder || "UTM Links").replace(/^\/+|\/+$/g, ""));
+      const prefix = folder ? `${folder}/` : "";
+      for (const f of this.app.vault.getMarkdownFiles()) {
+        if (prefix && !f.path.startsWith(prefix)) continue;
+        const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+        if (fm && typeof fm.utm_url === "string" && fm.utm_url.trim()) {
+          urls.add(fm.utm_url.trim());
+        }
+      }
     }
     return urls;
   }
@@ -612,14 +643,22 @@ class UtmBuilderModal extends Modal {
       }
 
       if (mode === "copy") {
-        await navigator.clipboard.writeText(entry.url);
-        new Notice(shouldSave ? "UTM Vault: copied URL and saved to registry" : "UTM Vault: copied URL");
-        this.close();
+        try {
+          await navigator.clipboard.writeText(entry.url);
+          new Notice(shouldSave ? "UTM Vault: copied URL and saved to registry" : "UTM Vault: copied URL");
+          this.close();
+        } catch (e) {
+          new Notice("UTM Vault: could not copy to clipboard");
+        }
       } else if (mode === "copy-md") {
         const md = `[${entry.label || entry.params.utm_campaign || entry.url}](${entry.url})`;
-        await navigator.clipboard.writeText(md);
-        new Notice(shouldSave ? "UTM Vault: copied Markdown link and saved" : "UTM Vault: copied Markdown link");
-        this.close();
+        try {
+          await navigator.clipboard.writeText(md);
+          new Notice(shouldSave ? "UTM Vault: copied Markdown link and saved" : "UTM Vault: copied Markdown link");
+          this.close();
+        } catch (e) {
+          new Notice("UTM Vault: could not copy to clipboard");
+        }
       } else if (mode === "insert" && this.editor) {
         const text = entry.label ? `[${entry.label}](${entry.url})` : entry.url;
         this.editor.replaceSelection(text);
@@ -713,8 +752,12 @@ class UtmAuditModal extends Modal {
           return `- ${icon} \`${r.url}\`${notes}`;
         })
         .join("\n");
-      await navigator.clipboard.writeText(md);
-      new Notice("UTM Vault: audit summary copied");
+      try {
+        await navigator.clipboard.writeText(md);
+        new Notice("UTM Vault: audit summary copied");
+      } catch (e) {
+        new Notice("UTM Vault: could not copy to clipboard");
+      }
     });
   }
 }
@@ -733,6 +776,7 @@ class UtmVaultSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     const s = this.plugin.settings;
     const save = async () => this.plugin.saveSettings();
+    const saveDebounced = () => this.plugin.scheduleSaveSettings();
     containerEl.empty();
 
     const intro = containerEl.createDiv({ cls: "setting-item-description utm-vault-intro" });
@@ -746,9 +790,9 @@ class UtmVaultSettingTab extends PluginSettingTab {
       .setName("Default destination URL")
       .setDesc("Optional starting URL pre-filled when opening the builder.")
       .addText((t) =>
-        t.setPlaceholder("https://example.com").setValue(s.defaultBaseUrl).onChange(async (v) => {
+        t.setPlaceholder("https://example.com").setValue(s.defaultBaseUrl).onChange((v) => {
           s.defaultBaseUrl = v;
-          await save();
+          saveDebounced();
         })
       );
 
@@ -772,9 +816,9 @@ class UtmVaultSettingTab extends PluginSettingTab {
       .setName("Allowed sources")
       .setDesc("Optional comma-separated list. Warn when utm_source is outside this list.")
       .addText((t) =>
-        t.setPlaceholder("google, meta, linkedin, newsletter").setValue(s.allowedSources).onChange(async (v) => {
+        t.setPlaceholder("google, meta, linkedin, newsletter").setValue(s.allowedSources).onChange((v) => {
           s.allowedSources = v;
-          await save();
+          saveDebounced();
         })
       );
 
@@ -782,9 +826,9 @@ class UtmVaultSettingTab extends PluginSettingTab {
       .setName("Allowed mediums")
       .setDesc("Optional comma-separated list. Warn when utm_medium is outside this list.")
       .addText((t) =>
-        t.setPlaceholder("cpc, paid-social, email, social, video").setValue(s.allowedMediums).onChange(async (v) => {
+        t.setPlaceholder("cpc, paid-social, email, social, video").setValue(s.allowedMediums).onChange((v) => {
           s.allowedMediums = v;
-          await save();
+          saveDebounced();
         })
       );
 
@@ -810,9 +854,9 @@ class UtmVaultSettingTab extends PluginSettingTab {
       new Setting(containerEl)
         .setName("Registry file path")
         .addText((t) =>
-          t.setPlaceholder("UTM Registry.md").setValue(s.registryPath).onChange(async (v) => {
+          t.setPlaceholder("UTM Registry.md").setValue(s.registryPath).onChange((v) => {
             s.registryPath = v || "UTM Registry.md";
-            await save();
+            saveDebounced();
           })
         );
     }
@@ -832,9 +876,9 @@ class UtmVaultSettingTab extends PluginSettingTab {
       new Setting(containerEl)
         .setName("UTM notes folder")
         .addText((t) =>
-          t.setPlaceholder("UTM Links").setValue(s.notesFolder).onChange(async (v) => {
+          t.setPlaceholder("UTM Links").setValue(s.notesFolder).onChange((v) => {
             s.notesFolder = v || "UTM Links";
-            await save();
+            saveDebounced();
           })
         );
       new Setting(containerEl)
@@ -850,21 +894,21 @@ class UtmVaultSettingTab extends PluginSettingTab {
       new Setting(row)
         .setName(preset.name || `Preset ${idx + 1}`)
         .addText((t) =>
-          t.setPlaceholder("Label").setValue(preset.name).onChange(async (v) => {
+          t.setPlaceholder("Label").setValue(preset.name).onChange((v) => {
             preset.name = v;
-            await save();
+            saveDebounced();
           })
         )
         .addText((t) =>
-          t.setPlaceholder("utm_source").setValue(preset.source).onChange(async (v) => {
+          t.setPlaceholder("utm_source").setValue(preset.source).onChange((v) => {
             preset.source = v;
-            await save();
+            saveDebounced();
           })
         )
         .addText((t) =>
-          t.setPlaceholder("utm_medium").setValue(preset.medium).onChange(async (v) => {
+          t.setPlaceholder("utm_medium").setValue(preset.medium).onChange((v) => {
             preset.medium = v;
-            await save();
+            saveDebounced();
           })
         )
         .addButton((b) =>
