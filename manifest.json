@@ -1,10 +1,11 @@
 {
   "id": "utm-vault",
   "name": "UTM Vault",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minAppVersion": "1.4.10",
   "description": "Build, normalise, validate and organise UTM tracking links with channel presets, a Markdown registry and Bases support.",
   "author": "David",
   "authorUrl": "https://github.com/chi-li-peppers",
-  "isDesktopOnly": false
+  "isDesktopOnly": false,
+  "fundingUrl": "https://www.patreon.com/c/chi_li_peppers"
 }
